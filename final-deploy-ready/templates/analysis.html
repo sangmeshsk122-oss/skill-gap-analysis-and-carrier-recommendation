@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}Skill Gap Analysis - SkillMatrix{% endblock %}
+{% block page_heading %}Skill Gap Analysis & Career Recommendations{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header">
+        <h2 class="panel-title">Highest-Priority Missing Skills Across Careers</h2>
+        <span class="badge badge-neutral">Gap × Career Importance</span>
+    </div>
+    <p style="color: var(--slate-500); font-size: 12.5px; margin-bottom: 14px;">
+        Skills are ranked by the sum of their proficiency gaps multiplied by each career's importance weight. A skill required by multiple careers can rank higher. Project evidence does not replace quiz-verified proficiency for this ranking.
+    </p>
+    {% if skill_priorities %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Skill</th>
+                        <th>Current Level</th>
+                        <th>Priority Score</th>
+                        <th>Careers Affected</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in skill_priorities %}
+                    <tr>
+                        <td><strong>#{{ loop.index }}</strong></td>
+                        <td><strong>{{ item.skill_name }}</strong></td>
+                        <td>{{ item.current_proficiency }} / 5</td>
+                        <td><span class="badge badge-warning">{{ item.priority_score }}</span></td>
+                        <td>
+                            {% for career in item.affected_careers %}
+                                <span class="badge badge-neutral">{{ career.career_title }} (gap {{ career.gap }})</span>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state" style="padding: 24px 20px;">
+            <i class="fa-solid fa-circle-check"></i>
+            <p>No missing skills in the available career profiles.</p>
+        </div>
+    {% endif %}
+</div>
+
+{% if not has_assessment %}
+<div class="panel">
+    <div class="empty-state">
+        <i class="fa-solid fa-chart-simple"></i>
+        <h3 style="color: var(--navy-900);">Assessment Data Required</h3>
+        <p style="margin-bottom: 16px;">Pass at least one skill quiz level to compute career compatibility scores.</p>
+        <a href="{{ url_for('student.assessment') }}" class="btn btn-primary">Go to Skill Assessment</a>
+    </div>
+</div>
+{% else %}
+
+<!-- Career Selection Tabs -->
+<div class="panel">
+    <div class="panel-header">
+        <h2 class="panel-title">Ranked Career Compatibility Profiles</h2>
+        <a href="{{ url_for('student.download_report') }}" class="btn btn-primary">
+            <i class="fa-solid fa-file-arrow-down"></i> Download PDF Report
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Career Title</th>
+                    <th>Match Percentage</th>
+                    <th>Strong Skills</th>
+                    <th>Skills to Improve</th>
+                    <th>Missing Skills</th>
+                    <th>Inspect</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in analysis %}
+                <tr style="{% if item.career_id == selected_career.career_id %}background-color: #EFF6FF;{% endif %}">
+                    <td><strong>#{{ loop.index }}</strong></td>
+                    <td><strong>{{ item.career_title }}</strong></td>
+                    <td>
+                        <span class="badge {% if item.match_percentage >= 75 %}badge-success{% elif item.match_percentage >= 50 %}badge-warning{% else %}badge-danger{% endif %}">
+                            {{ item.match_percentage }}%
+                        </span>
+                    </td>
+                    <td>{{ item.strong_skills | join(', ') if item.strong_skills else 'None' }}</td>
+                    <td>{{ item.weak_skills | join(', ') if item.weak_skills else 'None' }}</td>
+                    <td>{{ item.missing_skills | join(', ') if item.missing_skills else 'None' }}</td>
+                    <td>
+                        <a href="{{ url_for('student.analysis', career_id=item.career_id) }}" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;">
+                            Select
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Selected Career Detailed Gap Chart & Table -->
+<div class="grid-2">
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Gap Visualization: {{ selected_career.career_title }}</h2>
+        </div>
+        <canvas id="gapComparisonChart" height="240"></canvas>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Skill Gap Calculation Breakdown</h2>
+            <a href="{{ url_for('student.roadmap', career_id=selected_career.career_id) }}" class="btn btn-outline">
+                View Roadmap
+            </a>
+        </div>
+        <p style="font-size: 12.5px; color: var(--slate-500); margin-bottom: 14px;">
+            {{ selected_career.description }}
+        </p>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Skill</th>
+                        <th>Current</th>
+                        <th>Required</th>
+                        <th>Project Evidence</th>
+                        <th>Gap</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in selected_career.breakdown %}
+                    <tr>
+                        <td><strong>{{ row.skill_name }}</strong></td>
+                        <td>{{ row.current_proficiency }}</td>
+                        <td>{{ row.required_proficiency }}</td>
+                        <td>
+                            {% if row.portfolio_evidence %}
+                                <span class="badge badge-success">Listed in portfolio</span>
+                            {% else %}
+                                <span class="badge badge-neutral">None</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ row.gap }}</strong></td>
+                        <td>
+                            {% if row.status == 'Proficient' %}
+                                <span class="badge badge-success">Proficient</span>
+                            {% elif row.status == 'Needs Improvement' %}
+                                <span class="badge badge-warning">Needs Improvement</span>
+                            {% else %}
+                                <span class="badge badge-danger">Missing</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Algorithm Methodology & Limitations Documentation -->
+<div class="panel">
+    <div class="panel-header">
+        <h2 class="panel-title">Recommendation Algorithm Documentation & Scope</h2>
+    </div>
+    <p style="color: var(--slate-700); font-size: 13px; margin-bottom: 8px;">
+        <strong>Methodology:</strong> Career recommendations are computed using a deterministic, rule-based Weighted Competency Matching Engine rather than a black-box neural network. For each target career, required competencies are assigned target levels (1–5) and domain importance weights. Individual skill gaps are calculated strictly via <code>Gap = max(0, Required_Proficiency - Current_Proficiency)</code>. Overall compatibility uses quiz-based normalized skill attainment, with a capped 0.2 attainment bonus when a required skill is listed among a student's project technologies. This bonus affects the match score only; it does not change quiz proficiency, skill gaps, or proficiency status.
+    </p>
+    <p style="color: var(--slate-500); font-size: 12.5px;">
+        <strong>Limitations:</strong> Project technologies are student-reported and are not independently verified, so portfolio evidence is supporting context rather than proof of proficiency. Evaluations use predefined industry benchmark weights configured by system administrators and do not account for geographical job market fluctuations or live employer hiring signals.
+    </p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if has_assessment and selected_career %}
+<script>
+    const gapCtx = document.getElementById('gapComparisonChart').getContext('2d');
+    const breakdown = {{ selected_career.breakdown | tojson }};
+    new Chart(gapCtx, {
+        type: 'bar',
+        data: {
+            labels: breakdown.map(b => b.skill_name),
+            datasets: [
+                {
+                    label: 'Current Proficiency',
+                    data: breakdown.map(b => b.current_proficiency),
+                    backgroundColor: '#1E4475'
+                },
+                {
+                    label: 'Required Proficiency',
+                    data: breakdown.map(b => b.required_proficiency),
+                    backgroundColor: '#94A3B8'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } }
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

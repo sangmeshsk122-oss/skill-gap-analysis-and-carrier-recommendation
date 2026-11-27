@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Skill Progress - SkillMatrix{% endblock %}
+{% block page_heading %}Skill Improvement Tracking{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header">
+        <div>
+            <h2 class="panel-title">Previous vs. Current Assessment</h2>
+            <p style="font-size: 13px; color: var(--slate-500); margin-top: 5px;">
+                Compare your latest quiz attempt with the one before it for each skill.
+            </p>
+        </div>
+        <a href="{{ url_for('student.assessment') }}" class="btn btn-outline">Take a Skill Quiz</a>
+    </div>
+
+    <p style="font-size: 12.5px; color: var(--slate-500); margin-bottom: 16px;">
+        Verified proficiency increases when you pass a quiz level. Score change compares percent correct between attempts;
+        quiz levels may have different difficulty.
+    </p>
+
+    {% if progress_error %}
+        <div class="alert alert-danger">{{ progress_error }}</div>
+    {% else %}
+    {% if legacy_assessment_count %}
+        <div class="alert alert-info">
+            {{ legacy_assessment_count }} older summary assessment{{ 's were' if legacy_assessment_count != 1 else ' was' }}
+            not included because they do not contain individual quiz-attempt results.
+        </div>
+    {% endif %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Skill</th>
+                    <th>Previous Assessment</th>
+                    <th>Current Assessment</th>
+                    <th>Verified Proficiency</th>
+                    <th>Improvement</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in progress %}
+                <tr>
+                    <td>
+                        <strong>{{ item.skill_name }}</strong><br>
+                        <span style="font-size: 12px; color: var(--slate-500);">{{ item.category }}</span>
+                    </td>
+                    <td>
+                        {% if item.previous %}
+                            Level {{ item.previous.level }}<br>
+                            {{ item.previous.correct }} / {{ item.previous.total }} ({{ item.previous.score_percent }}%)
+                            {% if item.previous.taken_at %}
+                                <br><span style="font-size: 12px; color: var(--slate-500);">{{ item.previous.taken_at.strftime('%Y-%m-%d') }}</span>
+                            {% endif %}
+                        {% elif item.current %}
+                            <span class="badge badge-neutral">First recorded attempt</span>
+                        {% else %}
+                            <span class="badge badge-neutral">No assessment</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.current %}
+                            Level {{ item.current.level }}<br>
+                            {{ item.current.correct }} / {{ item.current.total }} ({{ item.current.score_percent }}%)
+                            {% if item.current.taken_at %}
+                                <br><span style="font-size: 12px; color: var(--slate-500);">{{ item.current.taken_at.strftime('%Y-%m-%d') }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge badge-neutral">No assessment</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.previous and item.current %}
+                            {{ item.previous.verified_level }} / 5 &rarr; {{ item.current.verified_level }} / 5
+                        {% elif item.current %}
+                            {{ item.current.verified_level }} / 5
+                        {% else %}
+                            0 / 5
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.proficiency_change is not none %}
+                            {% if item.proficiency_change > 0 %}
+                                <span class="badge badge-success">+{{ item.proficiency_change }} level{{ 's' if item.proficiency_change != 1 else '' }}</span>
+                            {% elif item.proficiency_change < 0 %}
+                                <span class="badge badge-warning">{{ item.proficiency_change }} levels</span>
+                            {% else %}
+                                <span class="badge badge-neutral">No level change</span>
+                            {% endif %}
+                            <br>
+                            {% if item.score_change > 0 %}
+                                <span style="font-size: 12px; color: var(--green-700, #15803d);">Score +{{ item.score_change }} percentage points</span>
+                            {% elif item.score_change < 0 %}
+                                <span style="font-size: 12px; color: var(--red-700, #b91c1c);">Score {{ item.score_change }} percentage points</span>
+                            {% else %}
+                                <span style="font-size: 12px; color: var(--slate-500);">Score unchanged</span>
+                            {% endif %}
+                        {% elif item.current %}
+                            <span class="badge badge-neutral">Baseline recorded</span>
+                        {% else %}
+                            <span class="badge badge-neutral">Not started</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

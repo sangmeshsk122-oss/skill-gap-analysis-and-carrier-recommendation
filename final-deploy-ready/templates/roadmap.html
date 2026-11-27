@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Learning Roadmap - SkillMatrix{% endblock %}
+{% block page_heading %}Personalized Skill Development Roadmap{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header">
+        <h2 class="panel-title">Target Career Roadmap Filter</h2>
+        <form method="GET" action="{{ url_for('student.roadmap') }}" style="display: flex; gap: 10px; align-items: center;">
+            <select name="career_id" class="form-control" style="width: 240px;" onchange="this.form.submit()">
+                {% for c in careers %}
+                <option value="{{ c.career_id }}" {% if c.career_id == selected_career_id %}selected{% endif %}>
+                    {{ c.career_title }} ({{ c.match_percentage }}% Match)
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    {% if not roadmap_items %}
+    <div class="empty-state">
+        <i class="fa-solid fa-circle-check"></i>
+        <h3 style="color: var(--navy-900);">All Required Competencies Met</h3>
+        <p>You currently meet or exceed all required proficiency benchmarks for this career track, or you have not yet completed an initial skill assessment.</p>
+    </div>
+    {% else %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 14%;">Skill</th>
+                    <th style="width: 11%;">Level Gap</th>
+                    <th style="width: 10%;">Priority</th>
+                    <th style="width: 26%;">Suggested Learning Topics</th>
+                    <th style="width: 22%;">Recommended Resources</th>
+                    <th style="width: 17%;">Progress Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in roadmap_items %}
+                <tr>
+                    <td><strong>{{ item.skill_name }}</strong></td>
+                    <td>{{ item.current_proficiency }} → {{ item.target_proficiency }}</td>
+                    <td>
+                        <span class="badge {% if item.priority == 'High' %}badge-danger{% elif item.priority == 'Medium' %}badge-warning{% else %}badge-neutral{% endif %}">
+                            {{ item.priority }}
+                        </span>
+                    </td>
+                    <td>{{ item.suggested_topics }}</td>
+                    <td>{{ item.learning_resources }}</td>
+                    <td>
+                        <select class="form-control roadmap-status-select" data-roadmap-id="{{ item.id }}" style="padding: 6px 8px; font-size: 12.5px;">
+                            <option value="Not Started" {% if item.status == 'Not Started' %}selected{% endif %}>Not Started</option>
+                            <option value="In Progress" {% if item.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Completed" {% if item.status == 'Completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                        <small id="status-msg-{{ item.id }}" style="display: block; margin-top: 3px; font-weight: 600;"></small>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

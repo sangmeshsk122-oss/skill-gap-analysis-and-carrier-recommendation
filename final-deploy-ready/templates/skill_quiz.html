@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ skill.name }} Quiz - SkillMatrix{% endblock %}
+{% block page_heading %}{{ skill.name }} Quiz{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header">
+        <div>
+            <h2 class="panel-title">
+                {% if completed %}Skill Complete{% else %}{{ level_name }} Level{% endif %}
+            </h2>
+            {% if not completed %}
+            <p style="font-size: 13px; color: var(--slate-500); margin-top: 5px;">
+                Answer all {{ questions|length }} questions. You need {{ passing_score }} correct to pass.
+            </p>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('student.assessment') }}" class="btn btn-outline">All skills</a>
+    </div>
+
+    {% if completed %}
+    <div class="empty-state">
+        <i class="fa-solid fa-circle-check"></i>
+        <h3 style="color: var(--navy-900); margin-bottom: 6px;">Expert level passed</h3>
+        <p style="margin-bottom: 18px;">You have completed all quiz levels for {{ skill.name }}.</p>
+        <a href="{{ url_for('student.analysis') }}" class="btn btn-primary">View career analysis</a>
+    </div>
+    {% else %}
+    <form method="POST">
+        <input type="hidden" name="level" value="{{ level }}">
+        {% for item in questions %}
+        {% set question_index = loop.index0 %}
+        <fieldset style="border: 0; border-bottom: 1px solid var(--slate-200); padding: 18px 0;">
+            <legend style="font-weight: 600; color: var(--navy-900); margin-bottom: 12px;">
+                {{ loop.index }}. {{ item.question }}
+            </legend>
+            {% for choice in item.choices %}
+            <label style="display: flex; align-items: flex-start; gap: 9px; padding: 7px 0; cursor: pointer;">
+                <input type="radio"
+                       name="answer_{{ question_index }}"
+                       value="{{ loop.index0 }}"
+                       required
+                       style="margin-top: 3px;">
+                <span>{{ choice }}</span>
+            </label>
+            {% endfor %}
+        </fieldset>
+        {% endfor %}
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-check"></i> Submit answers
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

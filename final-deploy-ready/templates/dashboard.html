@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard - SkillMatrix{% endblock %}
+{% block page_heading %}Student Competency Overview{% endblock %}
+
+{% block content %}
+<div class="metrics-grid">
+    <div class="metric-box">
+        <div class="metric-label">Assessments Logged</div>
+        <div class="metric-value">{{ assessment_count }}</div>
+        <div class="metric-sub">Stored in MySQL database</div>
+    </div>
+    <div class="metric-box">
+        <div class="metric-label">Mean Skill Proficiency</div>
+        <div class="metric-value">{{ avg_proficiency }} / 5.0</div>
+        <div class="metric-sub">Across {{ skills|length }} verified competencies</div>
+    </div>
+    <div class="metric-box">
+        <div class="metric-label">Top Recommended Role</div>
+        <div class="metric-value" style="font-size: 17px;">
+            {{ top_career.career_title if top_career else 'Pending Assessment' }}
+        </div>
+        <div class="metric-sub">
+            {{ top_career.match_percentage ~ '% Compatibility' if top_career else 'Complete assessment first' }}
+        </div>
+    </div>
+    <div class="metric-box">
+        <div class="metric-label">Roadmap Progress</div>
+        <div class="metric-value">
+            {{ roadmap_stats.get('Completed', 0) }} / {{ (roadmap_stats.get('Completed', 0) + roadmap_stats.get('In Progress', 0) + roadmap_stats.get('Not Started', 0)) }}
+        </div>
+        <div class="metric-sub">Skill gap modules completed</div>
+    </div>
+</div>
+
+{% if not has_assessment %}
+<div class="panel">
+    <div class="empty-state">
+        <i class="fa-solid fa-clipboard-list"></i>
+        <h3 style="color: var(--navy-900); margin-bottom: 6px;">No Skill Assessment Found</h3>
+        <p style="margin-bottom: 18px;">Pass skill quizzes to verify your proficiency and generate career compatibility rankings.</p>
+        <a href="{{ url_for('student.assessment') }}" class="btn btn-primary">
+            <i class="fa-solid fa-play"></i> Start Skill Quizzes
+        </a>
+    </div>
+</div>
+{% else %}
+<div class="grid-2">
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Verified Skill Proficiency</h2>
+            <a href="{{ url_for('student.assessment') }}" class="btn btn-outline">Continue Quizzes</a>
+        </div>
+        <canvas id="dashboardSkillChart" height="220"></canvas>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Career Compatibility Ranking</h2>
+            <a href="{{ url_for('student.analysis') }}" class="btn btn-outline">Detailed Breakdown</a>
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Career Track</th>
+                        <th>Match Score</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in analysis %}
+                    <tr>
+                        <td><strong>#{{ loop.index }}</strong></td>
+                        <td>{{ item.career_title }}</td>
+                        <td>
+                            <span class="badge {% if item.match_percentage >= 75 %}badge-success{% elif item.match_percentage >= 50 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {{ item.match_percentage }}%
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('student.analysis', career_id=item.career_id) }}" style="color: var(--navy-700); font-weight: 600; text-decoration: none;">
+                                Inspect Gap
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if has_assessment %}
+<script>
+    const ctx = document.getElementById('dashboardSkillChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ skills | map(attribute='name') | list | tojson }},
+            datasets: [{
+                label: 'Current Proficiency (0-5)',
+                data: {{ skills | map(attribute='proficiency') | list | tojson }},
+                backgroundColor: '#132F54',
+                borderRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Skill Assessment - SkillMatrix{% endblock %}
+{% block page_heading %}Skill Quizzes{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header">
+        <div>
+            <h2 class="panel-title">Verify Your Skills</h2>
+            <p style="font-size: 13px; color: var(--slate-500); margin-top: 5px;">
+                Complete a 20-question quiz for each skill. Pass each level with at least 14 correct answers to unlock the next one.
+            </p>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        {% for skill in skills %}
+        <section class="panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+                <div>
+                    <span class="badge badge-neutral">{{ skill.category }}</span>
+                    <h3 style="color: var(--navy-900); margin-top: 9px;">{{ skill.name }}</h3>
+                </div>
+                {% if skill.completed %}
+                    <span class="badge badge-success">Expert</span>
+                {% elif skill.proficiency > 0 %}
+                    <span class="badge badge-warning">{{ skill.level_name }}</span>
+                {% else %}
+                    <span class="badge badge-neutral">Not started</span>
+                {% endif %}
+            </div>
+
+            <p style="color: var(--slate-500); font-size: 13px; min-height: 38px;">
+                {{ skill.description or 'Test your knowledge and demonstrate your proficiency.' }}
+            </p>
+            <div style="height: 8px; background: var(--slate-200); border-radius: 4px; margin: 15px 0;">
+                <div role="progressbar"
+                     aria-label="{{ skill.name }} quiz progress"
+                     aria-valuemin="0"
+                     aria-valuemax="{{ total_levels }}"
+                     aria-valuenow="{{ skill.proficiency }}"
+                     style="width: {{ skill.progress_percent }}%; height: 100%; background: var(--navy-700); border-radius: 4px;">
+                </div>
+            </div>
+            <p style="font-size: 12px; color: var(--slate-500); margin-bottom: 15px;">
+                {{ skill.proficiency }} of {{ total_levels }} levels passed
+            </p>
+
+            <a href="{{ url_for('student.skill_assessment', skill_id=skill.id) }}"
+               class="btn {% if skill.completed %}btn-outline{% else %}btn-primary{% endif %}">
+                {% if skill.completed %}
+                    View completion
+                {% else %}
+                    Start {{ skill.next_level_name }} quiz
+                {% endif %}
+            </a>
+        </section>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

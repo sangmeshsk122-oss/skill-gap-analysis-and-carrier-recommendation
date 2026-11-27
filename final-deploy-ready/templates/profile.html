@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Student Profile - SkillMatrix{% endblock %}
+{% block page_heading %}Student Profile Management{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 820px;">
+    <div class="panel-header">
+        <h2 class="panel-title">Academic & Career Profile Details</h2>
+        <span class="badge badge-neutral">Student ID: {{ student.student_code }}</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('student.profile') }}">
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" name="full_name" class="form-control" value="{{ student.full_name }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Registered Email (Read-Only)</label>
+                <input type="email" class="form-control" value="{{ student.email }}" disabled style="background-color: var(--grey-100);">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                <input type="text" name="department" class="form-control" value="{{ student.department or '' }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Current Semester</label>
+                <input type="number" name="semester" min="1" max="10" class="form-control" value="{{ student.semester }}" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Education Details (Degree, Institution, CGPA)</label>
+            <textarea name="education_details" rows="3" class="form-control" placeholder="e.g., B.Tech in Computer Science, XYZ Institute of Technology, CGPA: 8.6">{{ student.education_details or '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Target Career Interests</label>
+            <input type="text" name="career_interests" class="form-control" value="{{ student.career_interests or '' }}" placeholder="e.g., Backend Engineering, Data Science, Cloud Security">
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
+        </button>
+    </form>
+</div>
+
+<div class="panel" id="project-portfolio" style="max-width: 820px;">
+    <div class="panel-header">
+        <h2 class="panel-title">Student Project Portfolio</h2>
+        <span class="badge badge-neutral">{{ projects|length }} Project(s)</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('student.add_project') }}">
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Project Title</label>
+                <input type="text" name="title" class="form-control" maxlength="150" placeholder="e.g., Student Result Portal" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">GitHub Repository URL</label>
+                <input type="url" name="github_url" class="form-control" maxlength="500" placeholder="https://github.com/username/project">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Technologies Used</label>
+            <input type="text" name="technologies" class="form-control" maxlength="255" placeholder="Python, SQL, Flask" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Project Description</label>
+            <textarea name="description" rows="3" class="form-control" placeholder="Describe the problem, your implementation, and the outcome." required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Add Project
+        </button>
+    </form>
+
+    {% if projects %}
+        <div class="project-list" style="margin-top: 22px;">
+            {% for project in projects %}
+                <article class="project-card">
+                    <div class="project-card-header">
+                        <h3>{{ project.title }}</h3>
+                        {% if project.github_url %}
+                            <a class="project-link" href="{{ project.github_url }}" target="_blank" rel="noopener noreferrer">
+                                <i class="fa-brands fa-github"></i> Repository
+                            </a>
+                        {% endif %}
+                    </div>
+                    <p class="project-description">{{ project.description }}</p>
+                    <div class="project-technologies">
+                        {% for technology in project.technologies.split(',') %}
+                            {% if technology.strip() %}
+                                <span class="badge badge-neutral">{{ technology.strip() }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <form method="POST" action="{{ url_for('student.delete_project', project_id=project.id) }}" style="margin-top: 12px;">
+                        <button type="submit" class="btn btn-danger-sm" onclick="return confirm('Remove this project from your portfolio?');">
+                            <i class="fa-solid fa-trash"></i> Remove
+                        </button>
+                    </form>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state" style="padding: 28px 20px;">
+            <i class="fa-solid fa-folder-open"></i>
+            <p>Add your completed projects to provide practical evidence of your skills.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="panel" id="resume-skills" style="max-width: 820px;">
+    <div class="panel-header">
+        <h2 class="panel-title">Resume Skill Extraction</h2>
+        {% if resume %}
+            <span class="badge badge-success">Resume Uploaded</span>
+        {% endif %}
+    </div>
+
+    <p style="color: var(--slate-600); margin-bottom: 14px;">
+        Upload a PDF resume to extract technical skills and compare them with quiz-verified proficiency.
+    </p>
+    <form method="POST" action="{{ url_for('student.upload_resume') }}" enctype="multipart/form-data">
+        <div class="form-group">
+            <label class="form-label">Resume PDF</label>
+            <input type="file" name="resume" class="form-control" accept=".pdf,application/pdf" required>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-file-arrow-up"></i> Extract Resume Skills
+        </button>
+    </form>
+
+    {% if resume %}
+        <div style="margin-top: 18px; padding: 12px; background: var(--grey-100); border-radius: 6px;">
+            <strong>{{ resume.original_filename }}</strong>
+            <span style="color: var(--slate-500);"> uploaded {{ resume.uploaded_at }}</span>
+        </div>
+    {% endif %}
+</div>
+
+<div class="panel" style="max-width: 820px;">
+    <div class="panel-header">
+        <h2 class="panel-title">Resume vs. Assessment Comparison</h2>
+    </div>
+
+    {% if resume %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Skill</th>
+                        <th>Category</th>
+                        <th>Resume</th>
+                        <th>Assessment Level</th>
+                        <th>Project Evidence</th>
+                        <th>Comparison</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in resume_comparison %}
+                    <tr>
+                        <td><strong>{{ row.skill_name }}</strong></td>
+                        <td>{{ row.category }}</td>
+                        <td>
+                            {% if row.in_resume %}
+                                <span class="badge badge-success">Detected</span>
+                            {% else %}
+                                <span class="badge badge-neutral">Not Detected</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ row.assessment_proficiency }} / 5</td>
+                        <td>
+                            {% if row.project_evidence %}
+                                {% for title in row.project_evidence %}
+                                    <span class="badge badge-success">{{ title }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="badge badge-neutral">No Project Evidence</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if row.status == 'Aligned' %}
+                                <span class="badge badge-success">Aligned</span>
+                            {% elif row.status == 'Resume Only' %}
+                                <span class="badge badge-warning">Resume Only</span>
+                            {% elif row.status == 'Assessment Only' %}
+                                <span class="badge badge-neutral">Assessment Only</span>
+                            {% else %}
+                                <span class="badge badge-neutral">Not Evidenced</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="fa-solid fa-file-lines"></i>
+            <p>Upload a resume to see a skill comparison.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

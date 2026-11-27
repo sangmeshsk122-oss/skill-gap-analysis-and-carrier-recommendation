@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Sign In - SkillMatrix{% endblock %}
+{% block auth_content %}
+<div class="auth-wrapper">
+    <div class="auth-box">
+        <div style="margin-bottom: 22px;">
+            <h2 style="color: var(--navy-900); font-size: 20px; font-weight: 700;">Student &amp; Admin Login</h2>
+            <p style="color: var(--slate-500); font-size: 13px;">Sign in with your account email and password to access SkillMatrix</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <div class="form-group">
+                <label class="form-label" for="email">Institutional Email</label>
+                <input type="email" id="email" name="email" class="form-control" required placeholder="student@university.edu">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" required placeholder="Enter password">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                <i class="fa-solid fa-lock"></i> Sign In
+            </button>
+        </form>
+
+        <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--slate-200); font-size: 13px; color: var(--slate-500);">
+            New student? <a href="{{ url_for('auth.register') }}" style="color: var(--navy-800); font-weight: 600;">Create Student Account</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

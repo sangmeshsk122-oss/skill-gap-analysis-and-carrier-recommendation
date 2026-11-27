@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        if (localStorage.getItem('skillmatrix-theme') === 'dark') {
+            document.documentElement.dataset.theme = 'dark';
+        }
+    </script>
+    <title>{% block title %}Skill Gap Analysis System{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+{% if session.get('user_id') %}
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                <line x1="8" y1="16" x2="8" y2="11"></line>
+                <line x1="12" y1="16" x2="12" y2="7"></line>
+                <line x1="16" y1="16" x2="16" y2="13"></line>
+            </svg>
+            <div>
+                <span class="sidebar-brand-title">SkillMatrix</span>
+                <span class="sidebar-brand-sub">Career Intelligence System</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            {% if session.get('role') == 'student' %}
+                <a href="{{ url_for('student.dashboard') }}" class="nav-item {% if request.endpoint == 'student.dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-gauge"></i> Dashboard
+                </a>
+                <a href="{{ url_for('student.profile') }}" class="nav-item {% if request.endpoint == 'student.profile' %}active{% endif %}">
+                    <i class="fa-solid fa-id-card"></i> Student Profile
+                </a>
+                <a href="{{ url_for('student.profile') }}#resume-skills" class="nav-item">
+                    <i class="fa-solid fa-file-arrow-up"></i> Resume Skills
+                </a>
+                <a href="{{ url_for('student.profile') }}#project-portfolio" class="nav-item">
+                    <i class="fa-solid fa-folder-tree"></i> Project Portfolio
+                </a>
+                <a href="{{ url_for('student.assessment') }}" class="nav-item {% if request.endpoint in ['student.assessment', 'student.skill_assessment'] %}active{% endif %}">
+                    <i class="fa-solid fa-list-check"></i> Skill Quizzes
+                </a>
+                <a href="{{ url_for('student.skill_progress') }}" class="nav-item {% if request.endpoint == 'student.skill_progress' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-line"></i> Skill Progress
+                </a>
+                <a href="{{ url_for('student.analysis') }}" class="nav-item {% if request.endpoint == 'student.analysis' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-column"></i> Gap & Career Match
+                </a>
+                <a href="{{ url_for('student.roadmap') }}" class="nav-item {% if request.endpoint == 'student.roadmap' %}active{% endif %}">
+                    <i class="fa-solid fa-route"></i> Learning Roadmap
+                </a>
+                <a href="{{ url_for('student.download_report') }}" class="nav-item">
+                    <i class="fa-solid fa-file-pdf"></i> Export PDF Report
+                </a>
+            {% elif session.get('role') == 'admin' %}
+                <a href="{{ url_for('admin.admin_dashboard') }}" class="nav-item active">
+                    <i class="fa-solid fa-shield-halved"></i> Administration Console
+                </a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-footer">
+            <div><strong>{{ session.get('full_name') }}</strong></div>
+            <div>ID: {{ session.get('student_code') }}</div>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <h1 class="topbar-title">{% block page_heading %}Workspace{% endblock %}</h1>
+            <div class="topbar-actions">
+                <span class="badge badge-neutral">Role: {{ session.get('role')|capitalize }}</span>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+                    <i class="fa-solid fa-moon" aria-hidden="true"></i>
+                    <span class="theme-toggle-label">Dark theme</span>
+                </button>
+                <a href="{{ url_for('auth.logout') }}" class="topbar-signout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                </a>
+            </div>
+        </header>
+
+        <main class="content-area">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% else %}
+    <div class="auth-theme-control">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+            <i class="fa-solid fa-moon" aria-hidden="true"></i>
+            <span class="theme-toggle-label">Dark theme</span>
+        </button>
+    </div>
+    {% block auth_content %}{% endblock %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
